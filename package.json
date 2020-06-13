@@ -1,0 +1,24 @@
+{
+  "name": "super-dropdown",
+  "version": "1.0.0",
+  "description": "A Dropdown with super features",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ashwaniweb/super-dropdown.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ashwaniweb/super-dropdown/issues"
+  },
+  "homepage": "https://github.com/ashwaniweb/super-dropdown#readme",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0"
+  }
+}
