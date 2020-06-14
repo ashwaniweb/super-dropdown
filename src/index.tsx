@@ -1,5 +1,5 @@
 import * as React from "react";
-import ".style.scss";
+import './styles.scss'
 
 interface IProps {
   onChangeSelected: Function;
