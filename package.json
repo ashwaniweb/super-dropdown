@@ -1,6 +1,6 @@
 {
   "name": "super-dropdown",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "A Dropdown with super features",
   "main": "dist/index.js",
   "scripts": {
@@ -10,15 +10,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ashwaniweb/super-dropdown.git"
+    "url": "git+https://github.com/codegeek835/super-dropdown.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ashwaniweb/super-dropdown/issues"
+    "url": "https://github.com/codegeek835/super-dropdown/issues"
   },
-  "homepage": "https://github.com/ashwaniweb/super-dropdown#readme",
+  "homepage": "https://github.com/codegeek835/super-dropdown#readme",
   "devDependencies": {
     "@types/prop-types": "^15.7.3",
     "@types/react": "^16.9.36",
@@ -33,12 +33,13 @@
     "rollup": "^2.16.1",
     "rollup-plugin-sass": "^1.2.2",
     "rollup-plugin-typescript2": "^0.27.1",
+    "tslib": "^2.0.0",
     "typescript": "^3.9.5"
   },
   "peerDependencies": {
+    "prop-types": "^15.7.2",
     "react": "^16.8.0",
-    "react-dom": "^16.8.0",
-    "prop-types": "^15.7.2"
+    "react-dom": "^16.8.0"
   },
   "files": [
     "dist"

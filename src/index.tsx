@@ -1,30 +1,47 @@
 import * as React from "react";
-import './styles.scss'
+import "./assets/scss/styles.scss";
 
 interface IProps {
   onChangeSelected: Function;
   labelText: string;
-  onOpen: Function;
-  forceOnChangeSelected: boolean;
-  selectedList: Array<any>;
-  DropdownClass?: string;
   optionList: Array<{
-    value: string;
+    value: string | number;
     onHoverMsg: React.ReactNode;
     isDisabled: boolean;
-    name: string;
+    text: string;
   }>;
+  forceOnChangeSelected?: boolean;
+  selectedList?: Array<any>;
+  DropdownClass?: string;
   searchBoxId?: string;
-  isSaveInProgress: boolean;
+  isSaveInProgress?: boolean;
+  onOpen?: Function;
   hasValidation?: boolean;
   hasError?: boolean;
   showFilter?: boolean;
+  checkbox?: boolean;
+  multiple?: boolean;
   dropdownId?: string;
   keyId?: string;
+  align?: "left" | "right" | "center";
 }
+
 class SuperDropDown extends React.Component<IProps, any> {
-  node: any;
-  showFilter = true;
+  static defaultProps: Partial<IProps> = {
+    dropdownId: "multi-select-dropdown",
+    showFilter: false,
+    multiple: false,
+    DropdownClass: "",
+    selectedList: [],
+    searchBoxId: "search",
+    align: "left",
+    isSaveInProgress: false,
+    checkbox: false,
+    hasValidation: false,
+    hasError: false,
+    forceOnChangeSelected: false,
+    optionList: [],
+  };
 
   constructor(props: any) {
     super(props);
@@ -35,23 +52,14 @@ class SuperDropDown extends React.Component<IProps, any> {
       show: false,
     };
   }
-
-  static defaultProps: {
-    dropdownId: "multi-select-dropdown";
-    showFilter: false;
-    DropdownClass: "";
-    selectedList: [];
-    searchBoxId: "multi-select-dropdown-search";
-    isSaveInProgress: false;
-    hasValidation: false;
-    hasError: false;
-    forceOnChangeSelected: false;
-    optionList: [];
+  // Class level variable
+  node: any;
+  showFilter = true;
+  componentDidMount = () => {
+    if (this.node) {
+      this.node.parentElement.style.position = "relative";
+    }
   };
-  componentWillMount = () => {
-    this.props.keyId;
-  };
-  componentDidMount = () => {};
   componentDidUpdate = (prevProps: { optionList: any }) => {
     if (
       JSON.stringify(prevProps.optionList) !==
@@ -65,20 +73,32 @@ class SuperDropDown extends React.Component<IProps, any> {
       });
     }
   };
-  componentWillUnmount = () => {};
 
-  onSelect = (event: { target: { checked: any } }, item_id: any) => {
+  onSelect = (event: { target: { checked: any } }, item: any) => {
     let selectedValues = this.state.selectedValues;
-    if (event.target.checked) {
-      selectedValues.push(item_id);
+    let filterText = "";
+    if (this.props.multiple) {
+      if (event.target.checked) {
+        selectedValues.push(item.value);
+      } else {
+        let index = selectedValues.indexOf(item.value);
+        if (index !== -1) {
+          selectedValues.splice(index, 1);
+        }
+      }
     } else {
-      let index = selectedValues.indexOf(item_id);
-      if (index !== -1) {
-        selectedValues.splice(index, 1);
+      if (selectedValues.indexOf(item.value) > -1) {
+        selectedValues = [];
+        filterText = "";
+      } else {
+        selectedValues = [item.value];
+        filterText = item.text;
       }
     }
     this.setState({
+      filterText,
       selectedValues,
+      show: !this.props.multiple ? false : this.state.show,
     });
 
     if (this.props.forceOnChangeSelected) {
@@ -89,8 +109,8 @@ class SuperDropDown extends React.Component<IProps, any> {
   onSearch = (event: { target: { value: { toString: () => string } } }) => {
     if (event.target.value) {
       let optionList = this.props.optionList.filter(
-        (item: { name: { toString: () => string } }) =>
-          item.name
+        (item: { text: { toString: () => string } }) =>
+          item.text
             .toString()
             .toLowerCase()
             .includes(event.target.value.toString().toLowerCase())
@@ -109,13 +129,18 @@ class SuperDropDown extends React.Component<IProps, any> {
 
   onSelectAll = () => {
     let selectedValues = this.state.selectedValues;
-    this.state.optionList
-      .filter((item: { isDisabled: boolean }) => item.isDisabled != true)
-      .map((item: { value: any }) => {
-        if (selectedValues.indexOf(item.value) < 0) {
-          selectedValues.push(item.value);
-        }
-      });
+    if (selectedValues.length === this.state.optionList.length) {
+      selectedValues = [];
+    } else {
+      this.state.optionList
+        .filter((item: { isDisabled: boolean }) => item.isDisabled !== true)
+        .map((item: { value: any }) => {
+          if (selectedValues.indexOf(item.value) < 0) {
+            selectedValues.push(item.value);
+          }
+          return item.value;
+        });
+    }
     this.setState({
       selectedValues,
     });
@@ -137,13 +162,13 @@ class SuperDropDown extends React.Component<IProps, any> {
     }
   };
 
-  handleClick = (e: { target: { type: string } }) => {
+  handleClick = (e: { target: { type: string } } | any) => {
     if (this.state.show && e.target && e.target.type === "text") {
       return;
     }
     if (!this.state.show) {
       document.addEventListener("click", this.handleOutsideClick, false);
-      this.props.onOpen(this.props.keyId);
+      this.props.onOpen && this.props.onOpen(this.props.keyId);
     } else {
       document.removeEventListener("click", this.handleOutsideClick, false);
     }
@@ -156,7 +181,7 @@ class SuperDropDown extends React.Component<IProps, any> {
     if (this.node.contains(e.target)) {
       return;
     }
-    this.handleClick(e);
+    this.handleClick(this);
     this.props.onChangeSelected(this.props.keyId, this.state.selectedValues);
   };
 
@@ -166,8 +191,9 @@ class SuperDropDown extends React.Component<IProps, any> {
     return (
       <div
         className={
-          `multi-select-dropdown ${this.state.show ? "open " : "closed "}` +
-          this.props.DropdownClass
+          `multi-select-dropdown ${this.props.align} ${
+            this.state.show ? "open " : "closed "
+          }` + this.props.DropdownClass
         }
         id={this.props.dropdownId}
         ref={(node) => {
@@ -181,12 +207,10 @@ class SuperDropDown extends React.Component<IProps, any> {
           )}
         </label>
         <div
-          className={
-            `multi-select-dropdown-header ${
-              this.state.show ? "open" : "closed"
-            }` + validation
-          }
-          onClick={() => this.handleClick}
+          className={`header ${
+            this.state.show ? "open" : "closed"
+          } ${validation}`}
+          onClick={this.handleClick}
           tabIndex={0}
         >
           {this.showFilter && (
@@ -197,30 +221,30 @@ class SuperDropDown extends React.Component<IProps, any> {
               type="text"
               value={this.state.filterText}
               onChange={(value) => this.onSearch(value)}
-              hidden={!this.state.show}
+              hidden={!this.state.show && this.props.multiple}
             />
           )}
-          <span
-            className={
-              this.state.selectedValues.length == 0 ? "hide-total" : ""
-            }
-            itemID="span_total"
-          >
-            {this.state.selectedValues.length} Selected
-          </span>
+          {this.props.multiple ? (
+            <span
+              className={`multiple ${
+                this.state.selectedValues.length === 0 ? "hide-total" : ""
+              }`}
+              itemID="span_total"
+            >
+              {this.state.selectedValues.length} Selected
+            </span>
+          ) : (
+            <span className="single">{this.state.selectedText}</span>
+          )}
         </div>
-        <div
-          className={`multi-select-dropdown-body ${
-            this.state.show ? "open" : "closed"
-          }`}
-        >
+        <div className={`body ${this.state.show ? "open" : "closed"}`}>
           <ul>
             {this.state.optionList.map(
               (item: {
-                value: string | number | undefined;
+                value: string | number;
                 onHoverMsg: React.ReactNode;
-                isDisabled: boolean | undefined;
-                name: React.ReactNode;
+                isDisabled: boolean;
+                text: string;
               }) => {
                 let is_checked =
                   this.state.selectedValues.indexOf(item.value) > -1;
@@ -228,8 +252,8 @@ class SuperDropDown extends React.Component<IProps, any> {
                 if (
                   item.onHoverMsg &&
                   this.props.isSaveInProgress &&
-                  is_checked == true &&
-                  item.isDisabled == false
+                  is_checked &&
+                  !item.isDisabled
                 ) {
                   labelCass = "error tooltip";
                 } else if (item.onHoverMsg) {
@@ -238,39 +262,32 @@ class SuperDropDown extends React.Component<IProps, any> {
                 return (
                   <li
                     key={item.value}
-                    className={item.isDisabled ? "disabled" : ""}
+                    className={`${item.isDisabled ? "disabled" : ""}${
+                      is_checked ? "selected" : ""
+                    }`}
                   >
                     <label
                       className={labelCass}
-                      htmlFor={
-                        this.props.dropdownId
-                          ? this.props.dropdownId + "-chk-" + item.value
-                          : "chk-" + item.value
-                      }
+                      htmlFor={this.props.dropdownId + "-chk-" + item.value}
                     >
                       <input
                         type="checkbox"
-                        id={
-                          this.props.dropdownId
-                            ? this.props.dropdownId + "-chk-" + item.value
-                            : "chk-" + item.value
-                        }
-                        name={
-                          this.props.dropdownId
-                            ? this.props.dropdownId + "-chk-" + item.value
-                            : "chk-" + item.value
-                        }
-                        onChange={(value) => this.onSelect(value, item.value)}
+                        id={this.props.dropdownId + "-chk-" + item.value}
+                        name={this.props.dropdownId + "-chk-" + item.value}
+                        onChange={(e) => this.onSelect(e, item)}
                         checked={is_checked}
                         disabled={item.isDisabled}
+                        hidden={!this.props.checkbox}
                       />
-                      {item.name}
-                      {item.onHoverMsg && (
-                        <span className="tooltiptext">
-                          {item.onHoverMsg}
-                          <i></i>
-                        </span>
-                      )}
+                      {item.text}
+                      {
+                        // item.onHoverMsg && (
+                        //   <span className='tooltiptext'>
+                        //     {item.onHoverMsg}
+                        //     <i></i>
+                        //   </span>
+                        // )
+                      }
                     </label>
                   </li>
                 );
@@ -278,28 +295,25 @@ class SuperDropDown extends React.Component<IProps, any> {
             )}
           </ul>
         </div>
-        <div
-          className={`multi-select-dropdown-footer ${
-            this.state.show ? "open" : "closed"
-          }`}
-        >
-          <button
-            type="button"
-            className="ui button select-all"
-            role="button"
-            dangerouslySetInnerHTML={{ __html: "Select All" }}
-            onClick={this.onSelectAll}
-          />
-          <button
-            type="button"
-            className="ui button select-all"
-            role="button"
-            dangerouslySetInnerHTML={{ __html: "Reset" }}
-            onClick={this.onReset}
-          />
-        </div>
+        {this.props.multiple && (
+          <div className={`footer ${this.state.show ? "open" : "closed"}`}>
+            <button
+              type="button"
+              className="button select-all"
+              dangerouslySetInnerHTML={{ __html: "Select All" }}
+              onClick={this.onSelectAll}
+            />
+            <button
+              type="button"
+              className="button select-all"
+              dangerouslySetInnerHTML={{ __html: "Reset" }}
+              onClick={this.onReset}
+            />
+          </div>
+        )}
       </div>
     );
   }
 }
+
 export default SuperDropDown;
